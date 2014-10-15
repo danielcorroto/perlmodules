@@ -24,15 +24,15 @@ sub new {
 }
 
 sub _log {
-	print shift;
+	print shift."\n";
 }
 
 sub _basic_download {
 	my $self = shift;
-	my($cancelable, $url, $output, $extraOptions) = @_;
-	my $command = "wget $self->{options} $extraOptions -O \"$output\" \"$url\"";
+	my($cancelable, $url, $output, $extra_options, $postdata) = @_;
+	my $command = "wget $self->{options} $extra_options -O \"$output\" \"$url\"";
 	if ($self->{debug}) {
-		&_log("$command\n");
+		&_log("$command");
 	} else {
 		if ($cancelable) {
 			my $pid = fork();
@@ -51,6 +51,7 @@ sub _basic_download {
 sub _is_child_alive {
 	my $pid = shift;
 	my $res = waitpid($pid, WNOHANG);
+	&_log("is alive $pid");
 	return $res == 0;
 }
 
@@ -64,25 +65,33 @@ sub _wait_download {
 		chomp $size;
 		$rate = int( ($size - $lastsize) / $self->{autocancelable_time} / 1024 );
 		$fails += 1 if ($rate < $self->{autocancelable_rate});
-		$fails -= 1 if ($fails > 0 && $rate > 2*$self->{autocancelable_rate});
-		&_log("\n\tActual rate = $rate -> Fails:$fails -> $filename\n");
+		$fails -= 1 if ($fails > 0 && $rate > $self->{autocancelable_rate});
+		&_log("\n\tActual rate = $rate -> Fails:$fails -> $filename");
 	} while (&_is_child_alive($pid) && $fails <= $self->{autocancelable_maxfails});
 
-	&_log("kill -9 $pid +1\n");
-	kill "SIGKILL", $pid;
-	kill "SIGKILL", ($pid+1);
-	system("kill -9 $pid");
-	system("kill -9 ". ($pid+1));
+	if (&_is_child_alive($pid)) {
+		&_log("kill -9 $pid +1");
+		kill "SIGKILL", $pid;
+		kill "SIGKILL", ($pid+1);
+		system("kill -9 $pid");
+		system("kill -9 ". ($pid+1));
+		print "rm \"$filename\"\n"; # TODO cambiar por system
+	}
 }
 
 sub download {
 	my($self, $url, $output, $extra_options) = @_;
-	&_basic_download($self, 0, $url, $output, $extra_options);
+	&_basic_download($self, 0, $url, $output, $extra_options, "");
+}
+
+sub download_post {
+	my($self, $url, $output, $extra_options, $postdata) = @_;
+	&_basic_download($self, 0, $url, $output, $extra_options, $postdata);
 }
 
 sub download_cancelable {
 	my($self, $url, $output, $extra_options) = @_;
-	&_basic_download($self, 1, $url, $output, $extra_options);
+	&_basic_download($self, 1, $url, $output, $extra_options, "");
 }
 
 sub enable_debug {
