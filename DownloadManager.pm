@@ -51,7 +51,6 @@ sub _basic_download {
 sub _is_child_alive {
 	my $pid = shift;
 	my $res = waitpid($pid, WNOHANG);
-	&_log("is alive $pid");
 	return $res == 0;
 }
 
@@ -75,7 +74,7 @@ sub _wait_download {
 		kill "SIGKILL", ($pid+1);
 		system("kill -9 $pid");
 		system("kill -9 ". ($pid+1));
-		print "rm \"$filename\"\n"; # TODO cambiar por system
+		print "rm \"$filename\"\n"; # TODO cambiar por system o no
 	}
 }
 
