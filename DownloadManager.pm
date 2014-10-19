@@ -10,6 +10,8 @@ sub new {
 	my $self = {
 		# Debug off
 		debug => 0,
+		# Log off
+		log => 1,
 		# Opciones de wget
 		options => "-nv --user-agent=\"Mozilla/5.0 \(X11; Linux x86_64\) AppleWebKit/537.36 \(KHTML, like Gecko\) Chrome/37.0.2062.120 Safari/537.36\" --header=\"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\" --header=\"Accept-Language: es-ES,es;q=0.8,en-US;q=0.5,en;q=0.3\" --header=\"Accept-Encoding: gzip, deflate\" --header=\"Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\"",
 		# Autocancelable, mínimo kbps para dar fallo
@@ -24,7 +26,10 @@ sub new {
 }
 
 sub _log {
-	print shift."\n";
+	my $self = shift;
+	if ($self->{debug} or $self->{log}) {
+		print shift."\n";
+	}
 }
 
 sub _basic_download {
@@ -103,13 +108,21 @@ sub disable_debug {
 	$self->{debug} = 0;
 }
 
+sub enable_log {
+	my $self = shift;
+	$self{log} = 1;
+}
+
+sub disable_log {
+	my $self = shift;
+	$self{log} = 0;
+}
+
 sub config_autocancelable {
 	my ($self, $rate, $maxfails, $time) = @_;
 	$self->{autocancelable_rate} = $rate;
 	$self->{autocancelable_maxfails} = $maxfails;
 	$self->{autocancelable_time} = $time;
 }	
-
-# TODO download post
 
 1
